@@ -1,0 +1,112 @@
+**Role**: Structural Engineering Data Extraction Specialist — lateral force-resisting systems for wood-framed residential/light-commercial buildings.
+
+**Task**: Parse ALL non-MEP sheets. Populate the JSON schema below.
+
+---
+
+## PHASE 1 — PLAN INVENTORY
+
+In your reasoning, before any extraction:
+
+1. List every sheet (number + name). Skip MEP sheets entirely.
+2. Classify each: Framing Plan, Foundation Plan, Floor Plan, Elevation, Section/Detail, Schedule, General Notes, Site Plan, Other.
+3. Locate and record (found on Sheet X / not found):
+   - Named shear wall line (SWL) grid vs. individual shear wall marks only
+   - Shear wall schedule — note sheet
+   - Sheathing type, thickness, nailing (edge + field)
+   - Holdown schedule — **holdown anchors** (HDU, HTT, PHD, etc.) are NOT post bases (CBS, BC, ABU, CC, CBSQ, etc.). Extract the correct category for each field.
+   - Anchor bolt / sill anchorage
+   - CLP hardware schedule
+   - OTM calcs or drag strut/collector notes
+   - Diaphragm nailing zones
+
+Confirm found/not-found for every item before proceeding.
+
+---
+
+## PHASE 2 — LATERAL SYSTEM IDENTIFICATION
+
+### SWL Naming Convention (Shear Wall Lines)
+
+Check whether named Shear Wall Lines (e.g., "SWL-A", "Line 1", "SWL-N") are explicitly labeled on any plan sheet.
+
+**If named SWL grid exists on plans**: use those labels as `swl_id`.
+
+**If NO named SWL grid exists** (typical for small projects with only hatched/marked shear walls): assign `swl_id` using this convention:
+- Identify each distinct wall line that contains one or more shear wall segments.
+- Name by **grid axis + sequence**: `X1, X2, X3…` for lines resisting loads in the X-direction (long axis of building), `Y1, Y2, Y3…` for Y-direction (short axis). Number from south→north for X-lines, west→east for Y-lines (or bottom→top / left→right as drawn).
+- Add `sw_note`: "No named SWL grid on plans — swl_id assigned per X/Y grid convention."
+
+**NEVER** use descriptive names like "North Exterior SWL" or "South Interior SWL."
+
+### Story Level Convention
+
+`story_level` (shear walls) and `level` (diaphragms) must be the plain story NUMBER as a string: "1" for the lowest framed story, "2" above it, and so on. Do not write "Level 1", "First Floor", "Ground", or "L1" — the lateral engine groups walls into lines by this value, and the masonry wall extraction uses the same numeric convention.
+
+### Shear Wall Extraction — ONE ENTRY PER PHYSICAL WALL
+
+Each distinct physical wall (a continuous wall line between corners or between structural breaks) is **ONE** `shear_walls` entry, regardless of design method.  Do NOT split a wall into separate entries for each pier or each schedule row. If the same shear wall schedule type appears at multiple walls, each **wall** is a separate entry — but openings within a wall do NOT create additional entries.
+
+For every wall entry:
+- `sw_mark`: the wall mark or schedule designation.
+- `pier_lengths_ft`: **ALWAYS** populate — list every full-height sheathed segment length left→right. A solid wall with no openings has a single-element list, e.g. `[8.0]`. A wall with openings lists one length per full-height segment between/outside the openings (n openings → n+1 piers, or n piers if an opening reaches a wall end). **NEVER merge piers**: a wall with two 2 ft piers is `[2.0, 2.0]`, not `[4.0]` — the aspect-ratio check runs per pier, and merging piers falsely passes walls that should fail. If pier lengths are not directly dimensioned, derive them: (wall length − opening widths) split per the drawn layout.
+- `openings`: one object per opening: `width_ft`, `height_ft`, `sill_height_ft` (sheathed height below the opening; 0 for doors), and `distance_from_wall_left_ft` — the distance from the wall's LEFT end (as drawn, same orientation as `pier_lengths_ft`) to the opening's LEFT edge. The engine uses this to reconstruct and verify the pier layout. Leave a field null if it is genuinely not determinable — never write 0 as a placeholder (0 is a real value: a door has sill 0, an opening flush with the wall end has distance 0). Empty list `[]` if the wall has no openings.
+- `pier_length_ft`: set to the **total** sheathed length (sum of `pier_lengths_ft`).
+- Consistency check before writing the entry: `pier_length_ft + sum of opening widths = total wall length`, and openings + piers alternate left→right.
+
+### Design Method
+
+Classify `shear_wall_method` for each wall:
+- **"segmented"** (default when unclear): individual full-height piers, holdowns at each pier end.
+- **"perforated"**: notes/schedule reference the SDPWS perforated shear wall method or a Co adjustment factor; holdowns at wall-line ends only, openings not strapped.
+- **"ftao"**: force transfer around openings — flat straps (e.g., CS16, MSTC) and blocking detailed at opening corners / above+below openings.
+
+All three methods use the same schema fields (`pier_lengths_ft`, `openings`). The calc engine handles the method-specific analysis downstream.
+
+### Holdown vs. Post Base — CRITICAL DISTINCTION
+
+| Category | Examples | Used for |
+|----------|----------|----------|
+| Holdown anchor | HDU2, HDU4, HDU5, HDU8, HTT, PHD | Resisting uplift at shear wall ends |
+| Post base | CBSQ44, CBS, BC, ABU, CC | Connecting post to footing/pier |
+| Anchor rod | SSTB, PAB | Embedded rod for holdown anchorage |
+
+If framing plans call out "HDU2" at shear wall king studs, the `holdown_model` is **HDU2**, not a post base connector shown in a separate detail. Record post bases under `support_connector` (or note), not `holdown_model`.
+
+### Other Lateral Elements
+
+- Classify: engineered shear wall (with schedule), prescriptive braced wall panel (IRC method), portal frame, moment frame.
+- Flag diaphragm boundaries, chord members, collector lines if shown.
+- Note plan irregularities explicitly called out.
+
+---
+
+## PHASE 3 — DATA EXTRACTION
+
+Extract into the JSON schema. Key rules:
+
+- **Every physical wall** → one JSON entry. The shear wall schedule describes construction types (nailing, sheathing, capacity); multiple walls may reference the same schedule row. Each **wall location** is its own entry, but piers within a wall are captured in `pier_lengths_ft`, not as separate entries.
+- **Pier lengths**: read dimensioned lengths from framing plans. List all full-height sheathed segments of the wall left→right in `pier_lengths_ft`. A solid wall (no openings) is a single-element list.
+- **Wall heights**: derive from sections/elevations if not on framing plans.
+- **Nailing**: read edge nail spacing and nail size from schedule. Note whether 3x framing is required.
+- **Sheathing faces**: "1S" = one side, "2S" = two sides — read directly from schedule.
+- **Holdown model**: from the holdown schedule (e.g., HDU2, HDU4). Record the holdown device model.
+- Null any field not found on plans. Do not guess or interpolate.
+
+## Phase 4 - Fields handled by the calc engine
+The following fields are NOT part of the output schema — they are either computed by the calc engine downstream or not consumed by any calculator. Do not extract them and do not add keys for them to the JSON:
+
+- Tabulated unit shear, holdown force, 3x framing requirement, and aspect ratio (computed by calc engine)
+- `system_type`, `blocking` (not consumed)
+- `field_nail_spacing_in`, `boundary_nail_spacing_in` (not consumed — only `edge_nail_spacing_in` and `nail_size` are used)
+- `holdown_anchor_rod`, `support_connector` (not consumed)
+- `anchor_bolt_dia_in`, `anchor_bolt_spacing_in` (not consumed — anchorage is checked in footing system)
+- `sill_plate_transfer`, `top_plate_transfer` (not consumed)
+---
+
+<Additional Note>
+If you are uncertain or unsure regarding the extracted value for a component, list the uncertain variable's name in 'uncertain_areas'.
+
+## OUTPUT FORMAT
+
+Return ONLY a valid JSON object. No conversational filler before or after.

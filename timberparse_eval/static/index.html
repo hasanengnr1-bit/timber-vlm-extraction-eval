@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TimberParse · Review studio</title><link rel="stylesheet" href="/static/style.css"></head>
+<body>
+<header><div class="brand"><span class="brand-icon">T</span><div>TimberParse <span class="muted">/ Eval</span><small>DRAWING EXTRACTION · MANUAL REVIEW</small></div></div><div class="header-right"><span class="local-dot"></span> Local workspace <button id="folderBtn" class="quiet">Results folder</button><button id="guideBtn" class="quiet">Guide</button></div></header>
+<main>
+<aside id="sidebar"><div class="section-label">DRAWING SETS <button id="newBtn" class="icon" title="Upload drawing set">＋</button></div><div id="projects"></div><button id="demoBtn" class="quiet wide">Try a synthetic example</button><div class="sidebar-bottom"><span class="section-label">EVERY MARK SAVED LOCALLY</span><p id="folderLabel"></p></div></aside>
+<section id="empty" class="empty"><div class="eyebrow">FROM DRAWINGS TO EVIDENCE</div><h1>Measure what<br>the model reads.</h1><p>Review extracted timber-plan information against the original drawing. Keep your corrections, uncertainty checks, and evidence together.</p><button id="emptyUpload" class="primary">Upload a drawing set</button><div class="empty-steps"><div><b>01</b> Extract with SmartStructs</div><div><b>02</b> Review and mark evidence</div><div><b>03</b> Export measured results</div></div></section>
+<section id="workspace" hidden>
+<div class="project-bar"><div><div class="eyebrow" id="projectKind">DRAWING SET</div><h1 id="projectTitle"></h1></div><div class="actions"><button id="importBtn">Import extraction</button><button id="extractBtn" class="primary">Run extraction</button></div></div>
+<div class="run-bar"><label>Run <select id="runSelect"></select></label><label>Stage <select id="stageSelect"><option value="raw">Raw extraction</option></select></label><span id="runStatus" class="pill"></span><span id="saveStatus" class="save-status">All changes saved</span><button id="exportBtn">Export project ZIP</button></div>
+<div id="runMessage" class="notice" hidden></div>
+<div class="tabs"><button id="reviewTab" class="tab active">Review workspace</button><button id="scoresTab" class="tab">Accuracy & uncertainty</button><span id="progress"></span></div>
+<div id="reviewPanel" class="review-layout">
+<section class="drawing-pane"><div class="pane-toolbar"><span class="section-label">SOURCE DRAWING</span><div><button id="prevPage" aria-label="Previous page">‹</button><input id="pageNumber" type="number" min="1" value="1" aria-label="Page"><span id="pageCount"></span><button id="nextPage" aria-label="Next page">›</button><select id="zoom" aria-label="Zoom"><option value="1">Fit width</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select></div></div><div id="markHint" class="mark-hint">Select a field, then drag a rectangle on the drawing to save evidence.</div><div id="pdfScroll"><div id="pageSurface"><img id="pageImage" alt="Structural drawing page"><svg id="markLayer" viewBox="0 0 1000 1000" preserveAspectRatio="none"></svg></div></div><div class="drawing-footer"><a id="pdfLink" target="_blank" rel="noopener">Open original PDF ↗</a><span>Rectangles stay aligned when zooming</span></div></section>
+<section class="review-pane"><div class="review-controls"><select id="groupFilter" aria-label="Structural collection"><option value="all">All structural systems</option></select><select id="filter" aria-label="Review filter"><option value="all">All fields</option><option value="unreviewed">Unreviewed</option><option value="errors">Errors</option><option value="flagged">Flagged</option></select><input id="search" placeholder="Find member or field…" aria-label="Search fields"></div><div class="member-tools"><button id="inventoryBtn">Member inventory</button><button id="missingBtn">＋ Missed member</button><label>Reviewer <input id="reviewer" placeholder="Your name"></label></div><div id="fieldList"></div><div id="fieldEditor" hidden></div></section>
+</div>
+<div id="scoresPanel" hidden></div>
+</section>
+</main>
+<dialog id="modal"><div class="dialog-head"><h2 id="modalTitle"></h2><button id="closeModal" class="icon" aria-label="Close dialog">×</button></div><div id="modalBody"></div></dialog>
+<div id="toast" role="status" hidden></div>
+<script src="/static/app.js"></script>
+</body></html>
