@@ -23,6 +23,22 @@ Keep the server running while reviewing. Use one server process per results fold
 
 ## Extraction configuration
 
+Keys live in the backend's `app/.env` (never in this folder, never shown in the browser). Two providers are supported.
+
+**OpenRouter** (set `LLM_PROVIDER=openrouter`):
+
+```
+LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_MODEL=google/<gemini model slug from openrouter.ai>
+OPENROUTER_LITE_MODEL=<optional cheaper model for the link resolver>
+```
+
+Each of the seven calls sends the whole PDF as a base64 file part with the original system prompt and user instruction, asks for the original Pydantic schema through `response_format` (`json_schema`, strict, `$ref`s inlined), only routes to endpoints that support structured outputs (`require_parameters`), and asks OpenRouter to pass the PDF to the model natively rather than converting it to text. Each call records which upstream provider served it, the model slug returned, token usage and cost. The response is validated against the same Pydantic class as the Google path. Note for reporting: this is the same prompts and schema as production, but the request path differs from the production Google SDK call.
+
+**Google AI Studio** (default, the production path): `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) and `GEMINI_MODEL_NAME`.
+
+
 The adapter reads `app/.env` without exposing it to the browser. Set `GOOGLE_API_KEY` (or `GEMINI_API_KEY`) and `GEMINI_MODEL_NAME` there or in environment variables. Optional link reconciliation uses `GEMINI_LITE_MODEL_NAME`, falling back to the original resolver's model default.
 
 **Run extraction → Start extraction** is the only action that calls a provider and may incur charges. It uploads the PDF to Google's file API, makes the same seven schema-constrained calls with the original prompt text and user instruction, and optionally applies the original link-resolution logic. Provider files are deleted after completion where possible. No paid call was used during development.

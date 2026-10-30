@@ -291,3 +291,56 @@ def test_split_and_pooled_summary(client):
     csv_text = client.get("/api/summary.csv?split=all").text
     assert csv_text.splitlines()[0].startswith("project,split,run")
     assert sum(",test," in line for line in csv_text.splitlines()) > 0
+
+
+def minimal(cls):
+    from baseline import deref
+    schema = cls.model_json_schema()
+    out = {}
+    for key in schema.get("required", []):
+        node = deref(schema["properties"][key], schema)
+        out[key] = [] if node.get("type") == "array" else {} if node.get("type") == "object" else None
+    return cls.model_validate(out).model_dump(mode="json")
+
+
+def test_openrouter_run_with_mocked_api(client, monkeypatch, tmp_path):
+    import asyncio, httpx, extract
+    monkeypatch.setenv("LLM_PROVIDER", "openrouter")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key")
+    monkeypatch.setenv("OPENROUTER_MODEL", "google/test-gemini")
+    assert extract.configuration() == {"provider": "openrouter", "model": "google/test-gemini", "lite_model": "", "has_key": True}
+    # Schemas sent to OpenRouter are self-contained.
+    for cls, _ in SYSTEMS.values():
+        assert "$ref" not in json.dumps(extract.inline_schema(cls.model_json_schema()))
+    seen = []
+
+    def handler(request):
+        body = json.loads(request.content)
+        seen.append(body)
+        assert request.headers["authorization"] == "Bearer test-key"
+        assert body["model"] == "google/test-gemini"
+        assert body["response_format"]["json_schema"]["strict"] is True
+        assert body["provider"]["require_parameters"] is True
+        part = body["messages"][1]["content"][1]
+        assert part["type"] == "file" and part["file"]["file_data"].startswith("data:application/pdf;base64,")
+        name = body["response_format"]["json_schema"]["name"]
+        if name == "roof_system":
+            return httpx.Response(500, json={"error": {"message": "upstream overloaded"}})
+        cls = SYSTEMS[name][0]
+        return httpx.Response(200, json={"id": "gen-1", "provider": "Google", "model": body["model"],
+                                         "choices": [{"message": {"content": json.dumps(minimal(cls))}}],
+                                         "usage": {"prompt_tokens": 10, "completion_tokens": 5, "cost": 0.001}})
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(handler)))
+    project = server.store.create_project("Mock set", client.post("/api/demo").json() and (server.store.project(server.store.projects()[0]["id"]) / "drawings/input.pdf").read_bytes(), 1)
+    started = client.post(f"/api/projects/{project['id']}/extract", json={"reconcile": False})
+    assert started.status_code == 200, started.text
+    meta = read(server.store.run(project["id"], started.json()["id"]) / "run_metadata.json")
+    assert meta["provider"] == "openrouter"
+    assert meta["status"] == "partial", meta
+    failed = [c for c in meta["calls"] if c["status"] == "failed"]
+    assert [c["system"] for c in failed] == ["roof_system"] and "upstream overloaded" in failed[0]["message"]
+    ok = [c for c in meta["calls"] if c["status"] == "complete"]
+    assert len(ok) == 6 and ok[0]["served_by"] == "Google" and ok[0]["usage"]["cost"] == 0.001
+    assert len(seen) == 7

@@ -143,12 +143,16 @@ def page_image(pid: str, page: int, width: int = 1600):
 def extract(pid: str, body: dict, background: BackgroundTasks):
     config = configuration()
     if not config["has_key"] or not config["model"]:
+        if config["provider"] == "openrouter":
+            raise ValueError("Set OPENROUTER_API_KEY and OPENROUTER_MODEL (e.g. the Gemini slug from openrouter.ai) in app/.env, then restart the tool")
         raise ValueError("Set GOOGLE_API_KEY (or GEMINI_API_KEY) and GEMINI_MODEL_NAME in the backend .env or environment, then try again")
     with LOCK:
         project = store.project(pid)
         if any(read(p)["status"] in {"queued", "running"} for p in project.glob("runs/run_*/run_metadata.json")):
             raise ValueError("An extraction is already running for this project")
         meta = store.create_run(pid, "live", config["model"], bool(body.get("reconcile", False)))
+        meta["provider"] = config["provider"]
+        atomic(store.run(pid, meta["id"]) / "run_metadata.json", meta)
         background.add_task(run_background, store, pid, meta["id"])
     return meta
 
