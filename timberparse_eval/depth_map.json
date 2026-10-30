@@ -1,0 +1,1008 @@
+{
+ "version": 1,
+ "levels": {
+  "explicit": "Normally printed on the drawings (on/next to the member, in a schedule, detail, or general note).",
+  "derived": "Not printed; computed or measured from drawing geometry or by combining printed values, possibly across sheets.",
+  "inferred": "Needs an engineering convention, assumption, code/manufacturer table, or load path judgement not stated on the drawings."
+ },
+ "note": "One level per field type: the usual minimum evidence route. Reviewers can override per value when a drawing differs.",
+ "fields": {
+  "floor_system/floor_joists/zone": {
+   "level": "explicit"
+  },
+  "floor_system/floor_joists/size": {
+   "level": "explicit"
+  },
+  "floor_system/floor_joists/number_of_plies": {
+   "level": "explicit"
+  },
+  "floor_system/floor_joists/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "floor_system/floor_joists/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "floor_system/floor_joists/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "floor_system/floor_joists/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_joists/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_joists/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_joists/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "floor_system/floor_joists/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_joists/clear_span_ft": {
+   "level": "derived"
+  },
+  "floor_system/floor_joists/cantilever_ft": {
+   "level": "derived"
+  },
+  "floor_system/floor_joists/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "floor_system/floor_joists/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "floor_system/floor_joists/spacing_in": {
+   "level": "explicit"
+  },
+  "floor_system/floor_drop_beams/zone": {
+   "level": "explicit"
+  },
+  "floor_system/floor_drop_beams/size": {
+   "level": "explicit"
+  },
+  "floor_system/floor_drop_beams/number_of_plies": {
+   "level": "explicit"
+  },
+  "floor_system/floor_drop_beams/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "floor_system/floor_drop_beams/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "floor_system/floor_drop_beams/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "floor_system/floor_drop_beams/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_drop_beams/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_drop_beams/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_drop_beams/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "floor_system/floor_drop_beams/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_drop_beams/clear_span_ft": {
+   "level": "derived"
+  },
+  "floor_system/floor_drop_beams/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "floor_system/floor_drop_beams/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "floor_system/floor_drop_beams/tributary_width_ft": {
+   "level": "inferred"
+  },
+  "floor_system/floor_flush_beams/zone": {
+   "level": "explicit"
+  },
+  "floor_system/floor_flush_beams/size": {
+   "level": "explicit"
+  },
+  "floor_system/floor_flush_beams/number_of_plies": {
+   "level": "explicit"
+  },
+  "floor_system/floor_flush_beams/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "floor_system/floor_flush_beams/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "floor_system/floor_flush_beams/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "floor_system/floor_flush_beams/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_flush_beams/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_flush_beams/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_flush_beams/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "floor_system/floor_flush_beams/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "floor_system/floor_flush_beams/clear_span_ft": {
+   "level": "derived"
+  },
+  "floor_system/floor_flush_beams/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "floor_system/floor_flush_beams/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "floor_system/floor_flush_beams/tributary_width_ft": {
+   "level": "inferred"
+  },
+  "footing/project_info/soil_bearing_pressure_psf": {
+   "level": "explicit"
+  },
+  "footing/project_info/concrete_fc_footings_psi": {
+   "level": "explicit"
+  },
+  "footing/project_info/concrete_fc_slab_psi": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/footing_mark": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/existing_condition": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/new_load_applied": {
+   "level": "inferred"
+  },
+  "footing/continuous_strip_footings/location_description": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/supported_element": {
+   "level": "inferred"
+  },
+  "footing/continuous_strip_footings/width_in": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/depth_in": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/longitudinal_rebar_size": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/longitudinal_rebar_count": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/transverse_rebar_size": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/transverse_rebar_spacing_in": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/sill_plate_size": {
+   "level": "explicit"
+  },
+  "footing/continuous_strip_footings/axial_D_kips": {
+   "level": "inferred"
+  },
+  "footing/continuous_strip_footings/axial_L_kips": {
+   "level": "inferred"
+  },
+  "footing/continuous_strip_footings/axial_S_kips": {
+   "level": "inferred"
+  },
+  "footing/pad_footings/footing_mark": {
+   "level": "explicit"
+  },
+  "footing/pad_footings/existing_condition": {
+   "level": "explicit"
+  },
+  "footing/pad_footings/new_load_applied": {
+   "level": "inferred"
+  },
+  "footing/pad_footings/location_description": {
+   "level": "explicit"
+  },
+  "footing/pad_footings/supported_element": {
+   "level": "inferred"
+  },
+  "footing/pad_footings/width_in": {
+   "level": "explicit"
+  },
+  "footing/pad_footings/length_in": {
+   "level": "derived"
+  },
+  "footing/pad_footings/depth_in": {
+   "level": "explicit"
+  },
+  "footing/pad_footings/rebar_size": {
+   "level": "explicit"
+  },
+  "footing/pad_footings/rebar_spacing_in": {
+   "level": "explicit"
+  },
+  "footing/pad_footings/post_size": {
+   "level": "explicit"
+  },
+  "footing/pad_footings/axial_DL_lbs": {
+   "level": "inferred"
+  },
+  "footing/pad_footings/axial_LL_lbs": {
+   "level": "inferred"
+  },
+  "footing/pad_footings/axial_SL_lbs": {
+   "level": "inferred"
+  },
+  "post/standalone_posts/post_mark": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/existing_condition": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/location_description": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/post_type": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/functional_type": {
+   "level": "inferred"
+  },
+  "post/standalone_posts/post_size": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/number_of_plies": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/species": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/grade": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "post/standalone_posts/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "post/standalone_posts/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "post/standalone_posts/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "post/standalone_posts/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "post/standalone_posts/height_ft": {
+   "level": "derived"
+  },
+  "post/standalone_posts/unbraced_length_ft": {
+   "level": "inferred",
+   "note": "Depends on assumed bracing (sheathing, blocking)."
+  },
+  "post/standalone_posts/bracing_condition": {
+   "level": "inferred"
+  },
+  "post/standalone_posts/tributary_area_sf": {
+   "level": "inferred"
+  },
+  "post/standalone_posts/point_load_lbs": {
+   "level": "inferred"
+  },
+  "post/standalone_posts/base_connector_model": {
+   "level": "explicit"
+  },
+  "post/standalone_posts/base_bearing_surface": {
+   "level": "derived"
+  },
+  "post/standalone_posts/base_anchor_type": {
+   "level": "explicit"
+  },
+  "roof_system/roof_rafters/zone": {
+   "level": "explicit"
+  },
+  "roof_system/roof_rafters/size": {
+   "level": "explicit"
+  },
+  "roof_system/roof_rafters/number_of_plies": {
+   "level": "explicit"
+  },
+  "roof_system/roof_rafters/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "roof_system/roof_rafters/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "roof_system/roof_rafters/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "roof_system/roof_rafters/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_rafters/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_rafters/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_rafters/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "roof_system/roof_rafters/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_rafters/clear_span_ft": {
+   "level": "derived"
+  },
+  "roof_system/roof_rafters/overhang_in": {
+   "level": "derived"
+  },
+  "roof_system/roof_rafters/roof_pitch": {
+   "level": "explicit",
+   "note": "Printed slope marker on elevations or sections."
+  },
+  "roof_system/roof_rafters/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "roof_system/roof_rafters/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "roof_system/roof_rafters/spacing_in": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/zone": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/size": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/number_of_plies": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/ceiling_joists/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/ceiling_joists/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/ceiling_joists/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "roof_system/ceiling_joists/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/ceiling_joists/clear_span_ft": {
+   "level": "derived"
+  },
+  "roof_system/ceiling_joists/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "roof_system/ceiling_joists/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "roof_system/ceiling_joists/spacing_in": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/ceiling_dead_load_psf": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/attic_live_load_psf": {
+   "level": "explicit"
+  },
+  "roof_system/ceiling_joists/attic_use": {
+   "level": "inferred"
+  },
+  "roof_system/ridge_beams/zone": {
+   "level": "explicit"
+  },
+  "roof_system/ridge_beams/size": {
+   "level": "explicit"
+  },
+  "roof_system/ridge_beams/number_of_plies": {
+   "level": "explicit"
+  },
+  "roof_system/ridge_beams/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "roof_system/ridge_beams/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "roof_system/ridge_beams/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "roof_system/ridge_beams/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/ridge_beams/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/ridge_beams/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/ridge_beams/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "roof_system/ridge_beams/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/ridge_beams/clear_span_ft": {
+   "level": "derived"
+  },
+  "roof_system/ridge_beams/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "roof_system/ridge_beams/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "roof_system/ridge_beams/tributary_width_ft": {
+   "level": "inferred"
+  },
+  "roof_system/hip_valley_rafters/zone": {
+   "level": "explicit"
+  },
+  "roof_system/hip_valley_rafters/member_type": {
+   "level": "explicit"
+  },
+  "roof_system/hip_valley_rafters/size": {
+   "level": "explicit"
+  },
+  "roof_system/hip_valley_rafters/number_of_plies": {
+   "level": "explicit"
+  },
+  "roof_system/hip_valley_rafters/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "roof_system/hip_valley_rafters/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "roof_system/hip_valley_rafters/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "roof_system/hip_valley_rafters/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/hip_valley_rafters/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/hip_valley_rafters/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/hip_valley_rafters/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "roof_system/hip_valley_rafters/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/hip_valley_rafters/clear_span_ft": {
+   "level": "derived"
+  },
+  "roof_system/hip_valley_rafters/roof_pitch": {
+   "level": "explicit",
+   "note": "Printed slope marker on elevations or sections."
+  },
+  "roof_system/hip_valley_rafters/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "roof_system/hip_valley_rafters/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "roof_system/hip_valley_rafters/tributary_width_ft": {
+   "level": "inferred"
+  },
+  "roof_system/roof_drop_beams/zone": {
+   "level": "explicit"
+  },
+  "roof_system/roof_drop_beams/size": {
+   "level": "explicit"
+  },
+  "roof_system/roof_drop_beams/number_of_plies": {
+   "level": "explicit"
+  },
+  "roof_system/roof_drop_beams/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "roof_system/roof_drop_beams/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "roof_system/roof_drop_beams/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "roof_system/roof_drop_beams/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_drop_beams/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_drop_beams/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_drop_beams/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "roof_system/roof_drop_beams/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_drop_beams/clear_span_ft": {
+   "level": "derived"
+  },
+  "roof_system/roof_drop_beams/roof_pitch": {
+   "level": "explicit",
+   "note": "Printed slope marker on elevations or sections."
+  },
+  "roof_system/roof_drop_beams/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "roof_system/roof_drop_beams/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "roof_system/roof_drop_beams/tributary_width_ft": {
+   "level": "inferred"
+  },
+  "roof_system/roof_flush_beams/zone": {
+   "level": "explicit"
+  },
+  "roof_system/roof_flush_beams/size": {
+   "level": "explicit"
+  },
+  "roof_system/roof_flush_beams/number_of_plies": {
+   "level": "explicit"
+  },
+  "roof_system/roof_flush_beams/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "roof_system/roof_flush_beams/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "roof_system/roof_flush_beams/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "roof_system/roof_flush_beams/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_flush_beams/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_flush_beams/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_flush_beams/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "roof_system/roof_flush_beams/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "roof_system/roof_flush_beams/clear_span_ft": {
+   "level": "derived"
+  },
+  "roof_system/roof_flush_beams/available_support_bearing_in": {
+   "level": "inferred"
+  },
+  "roof_system/roof_flush_beams/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "roof_system/roof_flush_beams/hanger_bucket_seat_depth_in": {
+   "level": "inferred"
+  },
+  "roof_system/roof_flush_beams/hanger_carrier_material": {
+   "level": "inferred"
+  },
+  "roof_system/roof_flush_beams/tributary_width_ft": {
+   "level": "inferred"
+  },
+  "shear_wall/shear_walls/sw_mark": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/swl_id": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/story_level": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/system_type": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/shear_wall_method": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/pier_lengths_ft": {
+   "level": "derived"
+  },
+  "shear_wall/shear_walls/openings": {
+   "level": "derived"
+  },
+  "shear_wall/shear_walls/framing_species": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/pier_length_ft": {
+   "level": "derived"
+  },
+  "shear_wall/shear_walls/wall_height_ft": {
+   "level": "derived"
+  },
+  "shear_wall/shear_walls/sheathing_type": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/sheathing_thickness_in": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/sheathing_faces": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/edge_nail_spacing_in": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/boundary_nail_spacing_in": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/nail_size": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/stud_size": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/stud_spacing_in": {
+   "level": "explicit"
+  },
+  "shear_wall/shear_walls/holdown_model": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/level": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/direction": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/span_ft": {
+   "level": "derived"
+  },
+  "shear_wall/diaphragms/depth_ft": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/sheathing_type": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/sheathing_thickness_in": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/nail_size": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/blocked": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/nailing_zones": {
+   "level": "explicit"
+  },
+  "shear_wall/diaphragms/nominal_unit_shear_plf": {
+   "level": "inferred",
+   "note": "Inferred from SDPWS tables unless the shear wall schedule prints the capacity."
+  },
+  "shear_wall/diaphragms/chord_member": {
+   "level": "inferred"
+  },
+  "shear_wall/diaphragms/collector_lines": {
+   "level": "derived"
+  },
+  "wall/stud_walls/zone": {
+   "level": "explicit"
+  },
+  "wall/stud_walls/stud_size": {
+   "level": "explicit"
+  },
+  "wall/stud_walls/number_of_plies": {
+   "level": "explicit"
+  },
+  "wall/stud_walls/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "wall/stud_walls/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "wall/stud_walls/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "wall/stud_walls/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "wall/stud_walls/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "wall/stud_walls/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "wall/stud_walls/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "wall/stud_walls/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "wall/stud_walls/stud_height_ft": {
+   "level": "derived"
+  },
+  "wall/stud_walls/spacing_in": {
+   "level": "explicit"
+  },
+  "wall/stud_walls/wall_length_ft": {
+   "level": "derived"
+  },
+  "wall/stud_walls/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "wall/stud_walls/tributary_width_ft": {
+   "level": "inferred"
+  },
+  "wall/stud_walls/wall_dead_load_psf": {
+   "level": "inferred",
+   "note": "Explicit only when listed in the design loads note."
+  },
+  "wall/headers/zone": {
+   "level": "explicit"
+  },
+  "wall/headers/opening_mark": {
+   "level": "explicit"
+  },
+  "wall/headers/header_size": {
+   "level": "explicit"
+  },
+  "wall/headers/number_of_plies": {
+   "level": "explicit"
+  },
+  "wall/headers/lumber_spec/species": {
+   "level": "explicit"
+  },
+  "wall/headers/lumber_spec/grade": {
+   "level": "explicit"
+  },
+  "wall/headers/ewp_spec/product_type": {
+   "level": "explicit"
+  },
+  "wall/headers/ewp_spec/Fb_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "wall/headers/ewp_spec/Fv_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "wall/headers/ewp_spec/Fc_perp_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "wall/headers/ewp_spec/E_psi": {
+   "level": "explicit",
+   "note": "Engineered-wood design values; explicit when printed in notes or the product spec, otherwise inferred from manufacturer tables."
+  },
+  "wall/headers/ewp_spec/E_min_psi": {
+   "level": "explicit",
+   "note": "As E_psi."
+  },
+  "wall/headers/header_clear_span_ft": {
+   "level": "derived"
+  },
+  "wall/headers/available_bearing_in": {
+   "level": "inferred"
+  },
+  "wall/headers/support_material": {
+   "level": "derived",
+   "note": "Read from what the member bears on, usually on another sheet."
+  },
+  "wall/headers/tributary_width_ft": {
+   "level": "inferred"
+  },
+  "wall/headers/point_load_lbs": {
+   "level": "inferred"
+  },
+  "wall/headers/roof_load_on_header_psf": {
+   "level": "inferred"
+  },
+  "wall/masonry_walls/wall_mark": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/story_level": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/nominal_thickness_in": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/wall_height_ft": {
+   "level": "derived"
+  },
+  "wall/masonry_walls/panel_length_ft": {
+   "level": "derived"
+  },
+  "wall/masonry_walls/fm_psi": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/unit_compressive_strength_psi": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/grouting": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/mortar_type": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/vertical_bar_size": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/vertical_bar_spacing_in": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/horizontal_bar_size": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/horizontal_bar_spacing_in": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/rebar_grade_ksi": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/axial_dead_plf": {
+   "level": "inferred"
+  },
+  "wall/masonry_walls/axial_live_plf": {
+   "level": "inferred"
+  },
+  "wall/masonry_walls/roof_snow_load_psf": {
+   "level": "explicit"
+  },
+  "wall/masonry_walls/seismic_participation": {
+   "level": "inferred"
+  },
+  "wall/masonry_walls/swl_id": {
+   "level": "explicit"
+  },
+  "project_context/building_geometry/length_ft": {
+   "level": "derived"
+  },
+  "project_context/building_geometry/width_ft": {
+   "level": "explicit"
+  },
+  "project_context/building_geometry/eave_height_ft": {
+   "level": "derived"
+  },
+  "project_context/building_geometry/ridge_height_ft": {
+   "level": "derived"
+  },
+  "project_context/building_geometry/mean_roof_height_ft": {
+   "level": "derived"
+  },
+  "project_context/building_geometry/roof_type": {
+   "level": "explicit"
+  },
+  "project_context/building_geometry/roof_pitch_deg": {
+   "level": "derived"
+  },
+  "project_context/building_geometry/number_of_stories": {
+   "level": "derived",
+   "note": "Counted from levels and sections."
+  },
+  "project_context/building_geometry/story_heights_ft": {
+   "level": "derived"
+  },
+  "project_context/building_geometry/floor_area_per_story_sf": {
+   "level": "derived"
+  },
+  "project_context/wind_context/exposure_category": {
+   "level": "explicit"
+  },
+  "project_context/wind_context/exposure_justification": {
+   "level": "inferred"
+  },
+  "project_context/wind_context/ground_elevation_ft": {
+   "level": "explicit"
+  },
+  "project_context/seismic_context/site_class": {
+   "level": "explicit"
+  },
+  "project_context/seismic_context/response_modification_R": {
+   "level": "explicit"
+  },
+  "project_context/design_loads/roof_dead_load_psf": {
+   "level": "explicit"
+  },
+  "project_context/design_loads/roof_live_load_psf": {
+   "level": "explicit"
+  },
+  "project_context/design_loads/floor_dead_load_psf": {
+   "level": "explicit"
+  },
+  "project_context/design_loads/floor_live_load_psf": {
+   "level": "explicit"
+  },
+  "project_context/design_loads/wall_dead_load_psf": {
+   "level": "inferred",
+   "note": "Explicit only when listed in the design loads note."
+  }
+ }
+}

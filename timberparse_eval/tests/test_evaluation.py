@@ -185,3 +185,109 @@ def test_live_adapter_with_mocked_provider(client, sample, monkeypatch):
     assert len(read(folder / "extraction_raw.json")) == 6
     assert {c["config"].system_instruction for c in calls} == {prompt(s) for s in SYSTEMS}
     assert all(c["contents"][1] == USER_PROMPT for c in calls)
+
+
+def test_depth_error_type_coverage_and_selective_risk():
+    fields = [{"id": f"r/z/{i}/f{i}", "member_id": "m", "flag": flag, "system": "roof_system", "depth": depth}
+              for i, (flag, depth) in enumerate([("flagged", "explicit"), ("unflagged", "explicit"), ("unflagged", "derived"),
+                                                 ("flagged", "inferred"), ("unflagged", "inferred"), ("unknown", None)])]
+    review = {"fields": {
+        "r/z/0/f0": {"verdict": "incorrect", "error_type": "perceptual"},
+        "r/z/1/f1": {"verdict": "correct"},
+        "r/z/2/f2": {"verdict": "incorrect", "error_type": "reasoning"},
+        "r/z/3/f3": {"verdict": "unsupported", "error_type": "reasoning", "depth": "derived"},
+        "r/z/4/f4": {"verdict": "correct", "error_type": "perceptual"},  # ignored: not an error
+        "r/z/5/f5": {"verdict": "incorrect"}}}
+    result = scores({"fields": fields, "members": []}, review)
+    assert result["errors"] == 4
+    # Known flag status: f0..f4 -> 3 unflagged of 5.
+    assert result["coverage"]["value"] == 3 / 5
+    assert result["selective_risk"]["value"] == 1 / 3
+    assert result["by_error_type"]["perceptual"]["errors"] == 1
+    assert result["by_error_type"]["perceptual"]["error_flag_recall"]["value"] == 1
+    assert result["by_error_type"]["reasoning"]["errors"] == 2
+    assert result["by_error_type"]["reasoning"]["error_flag_recall"]["value"] == .5
+    assert result["by_error_type"]["unlabelled"]["errors"] == 1
+    # Override moves f3 from inferred to derived.
+    assert result["by_depth"]["explicit"]["accuracy"]["value"] == .5
+    assert result["by_depth"]["derived"]["accuracy"]["denominator"] == 2
+    assert result["by_depth"]["inferred"]["accuracy"]["value"] == 1
+    assert result["by_depth"]["unlabelled"]["total"] == 1
+
+
+def test_depth_map_covers_schema_and_assigns_field_types():
+    from evaluation import DEPTHS, load_depth_map
+    from baseline import excluded_fields
+    depth_map = load_depth_map()
+    data = {"roof_system": {"roof_rafters": [{"zone": "R1", "size": "2x8", "lumber_spec": {"species": "DF-L"}, "uncertain_areas": []}]}}
+    inv = inventory(data, schemas(), excluded_fields(), depth_map)
+    by_id = {f["id"]: f for f in inv["fields"]}
+    assert by_id["roof_system/roof_rafters/0/size"]["type"] == "roof_system/roof_rafters/size"
+    assert by_id["roof_system/roof_rafters/0/size"]["depth"] == "explicit"
+    assert by_id["roof_system/roof_rafters/0/clear_span_ft"]["depth"] == "derived"
+    assert by_id["roof_system/roof_rafters/0/lumber_spec/species"]["depth"] == "explicit"
+    assert all(v["level"] in DEPTHS for v in depth_map["fields"].values())
+    # Every scored field type in a full inventory has a level.
+    full = {}
+    for system, root in schemas().items():
+        for key, raw in root.get("properties", {}).items():
+            full.setdefault(system, {})[key] = [{}] if f"{system}/{key}" in catalog(schemas()) else {}
+    missing = [f["type"] for f in inventory(full, schemas(), excluded_fields(), depth_map)["fields"] if f["depth"] is None]
+    assert missing == []
+
+
+def test_review_accepts_depth_and_error_type_and_rejects_bad_values(client, sample):
+    data, base, view = sample
+    review = view["review"]
+    field = next(f["id"] for f in view["inventory"]["fields"] if f["name"] == "roof_pitch")
+    review["fields"][field] = {"verdict": "unsupported", "error_type": "reasoning", "depth": "inferred", "flag": "original"}
+    saved = client.put(base + "/review", json=review)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["scores"]["by_error_type"]["reasoning"]["errors"] == 1
+    bad = dict(review, revision=1, fields={field: {"verdict": "incorrect", "error_type": "spatial"}})
+    assert client.put(base + "/review", json=bad).status_code == 400
+    bad["fields"][field] = {"verdict": "incorrect", "depth": "deep"}
+    assert client.put(base + "/review", json=bad).status_code == 400
+    csv_text = (server.store.run(data["project"]["id"], data["run"]["id"]) / "annotations/raw/review_export.csv").read_text()
+    assert "field_type" in csv_text.splitlines()[0] and ",inferred,inferred,reasoning," in csv_text
+
+
+def test_split_and_pooled_summary(client):
+    first = client.post("/api/demo").json()
+    second = client.post("/api/demo").json()
+    # Demo projects stay out of the dataset.
+    assert client.put(f"/api/projects/{first['project']['id']}/split", json={"split": "test"}).status_code == 400
+    for item in (first, second):
+        meta = server.store.project(item["project"]["id"]) / "project.json"
+        project = read(meta)
+        project["demo"] = False
+        atomic(meta, project)
+    assert client.put(f"/api/projects/{first['project']['id']}/split", json={"split": "test"}).json()["split"] == "test"
+    assert client.put(f"/api/projects/{second['project']['id']}/split", json={"split": "development"}).status_code == 200
+    assert client.put(f"/api/projects/{second['project']['id']}/split", json={"split": "holdout"}).status_code == 400
+    # Demo runs are excluded too, so relabel the fixture runs as imported.
+    for item in (first, second):
+        path = server.store.run(item["project"]["id"], item["run"]["id"]) / "run_metadata.json"
+        atomic(path, dict(read(path), kind="imported"))
+    for item, verdict in ((first, "correct"), (second, "incorrect")):
+        base = f"/api/projects/{item['project']['id']}/runs/{item['run']['id']}"
+        view = client.get(base).json()
+        review = view["review"]
+        field = next(f["id"] for f in view["inventory"]["fields"] if f["name"] == "size")
+        review["fields"][field] = {"verdict": verdict}
+        members = [m for m in view["inventory"]["members"] if m["group"] == "roof_system/roof_rafters"]
+        review["members"] = {members[0]["id"]: "present", members[1]["id"]: "duplicate"}
+        review["missing"] = [{"id": "miss1", "group": "roof_system/roof_rafters", "values": {"zone": "R2"}}]
+        review["complete_groups"] = ["roof_system/roof_rafters"]
+        assert client.put(base + "/review", json=review).status_code == 200
+    test = client.get("/api/summary?split=test").json()
+    assert test["run_count"] == 1 and test["pooled"]["accuracy"]["value"] == 1
+    assert test["pooled"]["members"]["precision"]["value"] == .5
+    assert test["pooled"]["members"]["recall"]["value"] == .5
+    both = client.get("/api/summary?split=all").json()
+    assert both["run_count"] == 2 and both["pooled"]["accuracy"]["value"] == .5
+    assert both["pooled"]["members"]["totals"]["missed"] == 2
+    assert client.get("/api/summary?split=nope").status_code == 400
+    csv_text = client.get("/api/summary.csv?split=all").text
+    assert csv_text.splitlines()[0].startswith("project,split,run")
+    assert sum(",test," in line for line in csv_text.splitlines()) > 0

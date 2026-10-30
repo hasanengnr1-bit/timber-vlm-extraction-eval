@@ -13,9 +13,9 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from baseline import catalog, deref, schemas
-from evaluation import VERDICTS
+from evaluation import DEPTHS, ERROR_TYPES, VERDICTS
 from extract import configuration, run_background
-from storage import LOCK, Store, atomic, now, read
+from storage import LOCK, Store, atomic, dataset_csv, dataset_summary, now, read
 
 HERE = Path(__file__).resolve().parent
 store = Store(os.environ.get("TIMBERPARSE_RESULTS", str(HERE / "evaluation_results")))
@@ -101,6 +101,25 @@ async def upload_project(file: UploadFile = File(...), name: str = Form("Untitle
 def get_project(pid: str):
     folder = store.project(pid)
     return {**read(folder / "project.json"), "runs": sorted([read(p) for p in folder.glob("runs/run_*/run_metadata.json")], key=lambda r: r["created"], reverse=True)}
+
+
+@app.put("/api/projects/{pid}/split")
+def set_split(pid: str, body: dict):
+    return store.set_split(pid, str(body.get("split", "")))
+
+
+@app.get("/api/summary")
+def summary(split: str = "test", stage: str = "raw", runs: str = "all"):
+    with LOCK:
+        return dataset_summary(store, split, stage, runs)
+
+
+@app.get("/api/summary.csv")
+def summary_csv(split: str = "test", stage: str = "raw", runs: str = "all"):
+    with LOCK:
+        dataset_summary(store, split, stage, runs)  # validates options
+        return Response(dataset_csv(store, split, stage, runs), media_type="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="timberparse_{split}_{stage}_fields.csv"'})
 
 
 @app.get("/api/projects/{pid}/pdf")
@@ -191,6 +210,10 @@ def validate_review(view, review, pages):
     for r in review.get("fields", {}).values():
         if r.get("verdict", "unreviewed") not in VERDICTS or r.get("flag", "original") not in {"original", "flagged", "unflagged", "unknown"}:
             raise ValueError("Invalid review verdict or flag")
+        if r.get("depth") not in (None, "") + DEPTHS:
+            raise ValueError("Depth must be explicit, derived, or inferred")
+        if r.get("error_type") not in (None, "") + ERROR_TYPES:
+            raise ValueError("Error type must be perceptual or reasoning")
     if any(v not in {"unreviewed", "present", "extra", "duplicate"} for v in review.get("members", {}).values()):
         raise ValueError("Invalid member verdict")
     groups = set(view["collections"])

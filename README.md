@@ -20,8 +20,14 @@ This repository holds only the parts of the SmartStructs backend that the study 
 
 API keys are read from environment variables (`GOOGLE_API_KEY` or `GEMINI_API_KEY`, `GEMINI_MODEL_NAME`). No keys or project drawings are stored in this repository; evaluation results are excluded by `.gitignore`.
 
-## Still to add for the study
+## Study status
 
+Done in `timberparse_eval/`:
+- Three-level inference depth per field type (`depth_map.json`), with per-value override
+- Perceptual / reasoning error labels
+- Development / test split per drawing set, pooled dataset summary and field-level CSV
+- Coverage and selective risk for the uncertainty flags
+
+Still to add:
 - Configurations C1 (generic single prompt) and C2 (single prompt + domain instructions)
 - Deterministic timber validator (frozen before testing)
-- Inference-depth and perceptual/reasoning error labels in the evaluation tool

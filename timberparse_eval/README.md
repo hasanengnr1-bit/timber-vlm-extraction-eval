@@ -43,6 +43,13 @@ For offline review, import the original extraction JSON object (top-level keys s
 
 Keyboard shortcuts outside text inputs: **1** correct, **2** incorrect, **3** unsupported, **4** cannot determine, **5** N/A, **N** next field. Autosave shows its state in the run bar. Do not close the page while a save is pending; failed saves can be retried. Concurrent editing conflicts are rejected rather than overwriting a newer revision.
 
+## Study labels: inference depth, error type, split
+
+- **Inference depth.** `depth_map.json` gives every scored field type one of three levels: **explicit** (printed on the drawings, including schedules and general notes), **derived** (computed or measured from drawing geometry or by combining printed values), or **inferred** (needs an engineering convention, assumption, or table not stated on the drawings). Field types are field paths without member indices, e.g. `roof_system/roof_rafters/clear_span_ft`. The map is a draft to check once before annotating; edit the JSON to change a level. A reviewer can override the level for a single value in the field panel when that drawing differs from the usual case.
+- **Error type.** Every incorrect or unsupported verdict should be labelled **perceptual** (misread text, dimension, symbol, or member) or **reasoning** (read correctly but derived, interpreted, or applied domain knowledge wrongly). Keys **P** / **R**. The filter **Errors without type** finds unlabelled errors.
+- **Split.** Tag each real drawing set **Development** (used to write validator rules and adjust prompts) or **Test** (held out, used for reported results). Synthetic examples cannot be tagged.
+- **Dataset summary** (header button, or `GET /api/summary?split=test&stage=raw&runs=all`) pools every non-demo run in a split: member precision/recall over completed collections, field accuracy, and flag metrics overall, by depth, and by error type. `GET /api/summary.csv` exports one row per field (project, split, run, field type, verdict, flags, depth, error type) for statistical analysis.
+
 ## Uncertainty and metrics
 
 `uncertain_areas` is interpreted at its original object scope. An exact field name in the list flags that field. An explicit list without that name marks it unflagged. An absent/null list means unknown. Object-level flags are not expanded into child-field flags. Original notes remain visible. A reviewer can explicitly map an existing free-text flag to a field, with the override and rationale saved separately; this is not a newly generated confidence score.
@@ -55,6 +62,9 @@ Notes, `uncertain_areas`, and fields explicitly marked `SKIP_EXTRACTION` in the 
 - Flag precision = flagged errors / eligible flagged fields.
 - Unflagged error rate = unflagged errors / eligible unflagged fields.
 - Unknown flag status is excluded from flag metrics and counted explicitly.
+- Coverage = unflagged fields / eligible fields with known flag status (the share accepted without review if only flagged values were checked).
+- Selective risk = errors among unflagged fields / unflagged fields.
+- Error-flag recall is also reported separately for perceptual and reasoning errors, and every metric is broken down by inference depth.
 - Fields belonging to extra/duplicate members are excluded from field accuracy; those members remain false positives in member precision.
 - Member precision = present / (present + extra + duplicate).
 - Member recall = present / (present + missed).

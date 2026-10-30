@@ -9,7 +9,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from baseline import APP, SYSTEMS, catalog, digest, excluded_fields, prompt, schemas
-from evaluation import inventory, scores
+from collections import Counter
+from evaluation import DEPTHS, effective_depth, field_type, inventory, load_depth_map, ratio, scores
+SPLITS = ("unassigned", "development", "test")
 
 LOCK = threading.RLock()
 
@@ -36,6 +38,26 @@ def atomic(path, data):
 
 def new_id(prefix):
     return prefix + "_" + uuid.uuid4().hex[:16]
+
+
+FIELD_COLUMNS = ["project", "split", "run", "run_kind", "model", "stage", "revision", "field_id", "field_type", "system", "member_id",
+                 "member_verdict", "presence", "prediction", "verdict", "correction", "original_flag", "review_flag",
+                 "effective_flag", "depth_default", "depth_override", "depth", "error_type", "note", "reviewer"]
+
+
+def field_rows(project, view, rid, stage):
+    """One row per inventoried field; the long format used for pooled analysis."""
+    r = view["review"]
+    meta = view["metadata"]
+    for f in view["inventory"]["fields"]:
+        a = r["fields"].get(f["id"], {})
+        flag = a.get("flag", "original")
+        verdict = a.get("verdict", "unreviewed")
+        yield [project["id"], project.get("split", "unassigned"), rid, meta.get("kind", ""), meta.get("model", ""), stage, r["revision"],
+               f["id"], f.get("type", field_type(f["id"])), f["system"], f["member_id"], r.get("members", {}).get(f["member_id"], ""),
+               f["presence"], json.dumps(f["value"], ensure_ascii=False), verdict, a.get("correction", ""), f["flag"], flag,
+               f["flag"] if flag == "original" else flag, f.get("depth") or "", a.get("depth") or "", effective_depth(f, r) or "",
+               (a.get("error_type") or "") if verdict in {"incorrect", "unsupported"} else "", a.get("note", ""), a.get("reviewer", r.get("reviewer", ""))]
 
 
 class Store:
@@ -68,9 +90,21 @@ class Store:
         (folder / "drawings").mkdir(parents=True)
         (folder / "drawings/input.pdf").write_bytes(pdf_bytes)
         meta = {"id": pid, "name": name[:160], "created": now(), "pages": pages, "pdf": "drawings/input.pdf",
-                "pdf_sha256": digest(pdf_bytes), "demo": demo}
+                "pdf_sha256": digest(pdf_bytes), "demo": demo, "split": "unassigned"}
         atomic(folder / "project.json", meta)
         return meta
+
+    def set_split(self, pid, split):
+        if split not in SPLITS:
+            raise ValueError("Split must be unassigned, development, or test")
+        with LOCK:
+            path = self.project(pid) / "project.json"
+            meta = read(path)
+            if meta.get("demo") and split != "unassigned":
+                raise ValueError("Synthetic examples cannot be part of the dataset")
+            meta["split"] = split
+            atomic(path, meta)
+            return meta
 
     def create_run(self, pid, kind, model=None, reconcile=False):
         project = self.project(pid)
@@ -110,12 +144,14 @@ class Store:
             raise ValueError("This extraction stage is not available yet")
         data = read(target)
         schema_map = read(folder / "schemas.json")
-        inv = inventory(data, schema_map, read(folder / "exclusions.json"))
+        depth_map = load_depth_map()
+        inv = inventory(data, schema_map, read(folder / "exclusions.json"), depth_map)
         review_path = folder / "annotations" / stage / "reviews.json"
         review = read(review_path) if review_path.exists() else {"revision": 0, "fields": {}, "members": {}, "missing": [], "markings": [], "complete_groups": [], "reviewer": ""}
         return {"metadata": read(folder / "run_metadata.json"), "inventory": inv, "review": review,
                 "scores": scores(inv, review), "collections": catalog(schema_map),
-                "stages": [s for s in ["raw", "reconciled"] if (folder / f"extraction_{s}.json").exists()]}
+                "stages": [s for s in ["raw", "reconciled"] if (folder / f"extraction_{s}.json").exists()],
+                "depth_levels": depth_map.get("levels", {}), "depth_map_version": depth_map.get("version")}
 
     def save_review(self, pid, rid, stage, review):
         with LOCK:
@@ -140,13 +176,93 @@ class Store:
             atomic(folder / "scores.json", {"annotation_revision": r["revision"], "stage": stage, **view["scores"]})
             out = io.StringIO(newline="")
             writer = csv.writer(out)
-            writer.writerow(["run", "stage", "revision", "field_id", "member_id", "presence", "prediction", "verdict", "correction", "original_flag", "review_flag", "note", "reviewer"])
+            writer.writerow(FIELD_COLUMNS)
             def safe(v):
                 value = str(v)
                 return "'" + value if value.startswith(("=", "+", "-", "@", "\t", "\r")) else value
-            for f in view["inventory"]["fields"]:
-                a = r["fields"].get(f["id"], {})
-                writer.writerow([safe(x) for x in [rid, stage, r["revision"], f["id"], f["member_id"], f["presence"], json.dumps(f["value"], ensure_ascii=False), a.get("verdict", "unreviewed"), a.get("correction", ""), f["flag"], a.get("flag", "original"), a.get("note", ""), a.get("reviewer", r.get("reviewer", ""))]])
+            for row in field_rows(read(self.project(pid) / "project.json"), view, rid, stage):
+                writer.writerow([safe(x) for x in row])
             atomic(folder / "review_export.csv", out.getvalue())
             atomic(folder / "summary.txt", "TimberParse Eval\nRun: " + rid + "\nStage: " + stage + "\nAnnotation revision: " + str(r["revision"]) + "\n\n" + json.dumps(view["scores"], indent=2))
             return folder
+
+
+def pool(views):
+    """Pool reviewed fields from several (project, run) views into one score table.
+
+    Field metrics use every field once; member precision/recall sum the
+    present/extra/duplicate/missed counts of completed collections only.
+    """
+    fields, members, review = [], [], {"fields": {}, "members": {}}
+    member_totals = {}
+    for key, view in views:
+        for f in view["inventory"]["fields"]:
+            g = dict(f, id=key + ":" + f["id"], member_id=key + ":" + f["member_id"])
+            fields.append(g)
+            if f["id"] in view["review"]["fields"]:
+                review["fields"][g["id"]] = view["review"]["fields"][f["id"]]
+        for mid, verdict in view["review"].get("members", {}).items():
+            review["members"][key + ":" + mid] = verdict
+        for group, g in view["scores"]["member_groups"].items():
+            if not g["complete"]:
+                continue
+            t = member_totals.setdefault(group, Counter())
+            t.update({"present": g["counts"].get("present", 0), "extra": g["counts"].get("extra", 0),
+                      "duplicate": g["counts"].get("duplicate", 0), "missed": g["missing"], "runs": 1})
+    result = scores({"fields": fields, "members": members}, review)
+    result.pop("member_groups", None)
+    result.pop("member_counts", None)
+    total = Counter()
+    groups = {}
+    for group, t in sorted(member_totals.items()):
+        total.update(t)
+        tp, fp = t["present"], t["extra"] + t["duplicate"]
+        groups[group] = {**t, "precision": ratio(tp, tp + fp), "recall": ratio(tp, tp + t["missed"])}
+    tp, fp = total["present"], total["extra"] + total["duplicate"]
+    result["members"] = {"by_collection": groups, "totals": dict(total),
+                         "precision": ratio(tp, tp + fp), "recall": ratio(tp, tp + total["missed"])}
+    return result
+
+
+def dataset_views(store, split="test", stage="raw", runs="all"):
+    """Every non-demo run of every project in a split, newest first per project."""
+    chosen = []
+    for project in store.projects():
+        if project.get("demo") or (split != "all" and project.get("split", "unassigned") != split):
+            continue
+        metas = sorted([read(p) for p in store.project(project["id"]).glob("runs/run_*/run_metadata.json")], key=lambda m: m["created"], reverse=True)
+        metas = [m for m in metas if m["status"] in {"complete", "partial"} and m["kind"] != "demo"]
+        if runs == "latest":
+            metas = metas[:1]
+        for meta in metas:
+            try:
+                view = store.view(project["id"], meta["id"], stage)
+            except ValueError:
+                continue
+            chosen.append((project, meta, view))
+    return chosen
+
+
+def dataset_summary(store, split="test", stage="raw", runs="all"):
+    if split not in SPLITS + ("all",) or stage not in {"raw", "reconciled"} or runs not in {"all", "latest"}:
+        raise ValueError("Invalid summary options")
+    chosen = dataset_views(store, split, stage, runs)
+    per_run = [{"project": p["id"], "project_name": p["name"], "split": p.get("split", "unassigned"), "run": m["id"],
+                "kind": m["kind"], "model": m.get("model"), "status": m["status"], "annotation_revision": v["review"]["revision"],
+                "partial_review": v["scores"]["partial"], "accuracy": v["scores"]["accuracy"]} for p, m, v in chosen]
+    pooled = pool([(p["id"] + "/" + m["id"], v) for p, m, v in chosen])
+    depth_map = load_depth_map()
+    return {"split": split, "stage": stage, "runs": runs, "generated": now(), "run_count": len(chosen),
+            "project_count": len({p["id"] for p, _, _ in chosen}), "depth_map_version": depth_map.get("version"),
+            "per_run": per_run, "pooled": pooled,
+            "warning": "Pooled over every selected run. Unreviewed fields are excluded; check partial_review before reporting."}
+
+
+def dataset_csv(store, split="test", stage="raw", runs="all"):
+    out = io.StringIO(newline="")
+    writer = csv.writer(out)
+    writer.writerow(FIELD_COLUMNS)
+    for project, meta, view in dataset_views(store, split, stage, runs):
+        for row in field_rows(project, view, meta["id"], stage):
+            writer.writerow([("'" + str(x)) if str(x).startswith(("=", "+", "-", "@", "\t", "\r")) else str(x) for x in row])
+    return out.getvalue()
