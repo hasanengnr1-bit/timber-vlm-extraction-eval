@@ -6,6 +6,7 @@ import time
 from dotenv import load_dotenv
 from baseline import APP, SYSTEMS, USER_PROMPT, resolver_module
 from storage import atomic, now, read
+from evaluation import run_totals
 
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
@@ -114,13 +115,15 @@ async def execute_openrouter(store, pid, rid, meta, folder, started):
             try:
                 if tasks:
                     import json
+                    tick = time.monotonic()
                     parsed, data = await openrouter_json(http, model, ns["SYSTEM_PROMPT"], json.dumps(tasks, indent=1),
                                                          ns["LinkResolution"].model_json_schema(), "link_resolution")
                     atomic(folder / "responses/resolver.json", data)
                     decisions = ns["LinkResolution"].model_validate(parsed).decisions
                     applied = ns["apply_link_decisions"](linked, decisions, tasks)
                     atomic(folder / "resolver_changes.json", applied)
-                    meta["resolver"].update(status="complete", changes=len(applied), served_by=data.get("provider"))
+                    meta["resolver"].update(status="complete", changes=len(applied), served_by=data.get("provider"),
+                                            served_model=data.get("model"), usage=data.get("usage"), seconds=time.monotonic()-tick)
                 atomic(folder / "extraction_reconciled.json", linked)
             except Exception as exc:
                 meta["resolver"].update(status="failed", error_type=type(exc).__name__)
@@ -140,6 +143,7 @@ async def execute(store, pid, rid):
             meta.update(status="failed", error_type=type(exc).__name__, message="OpenRouter run failed. Check OPENROUTER_API_KEY, OPENROUTER_MODEL, credits, and network.")
         finally:
             meta.update(finished=now(), seconds=time.monotonic()-started)
+            meta["totals"] = {k: v for k, v in run_totals(meta).items() if k != "calls"}
             atomic(folder / "run_metadata.json", meta)
         return
     from google import genai
@@ -193,13 +197,15 @@ async def execute(store, pid, rid):
             try:
                 if tasks:
                     import json
+                    tick = time.monotonic()
                     response = await client.aio.models.generate_content(model=model, config=types.GenerateContentConfig(system_instruction=ns["SYSTEM_PROMPT"], response_schema=ns["LinkResolution"], response_mime_type="application/json"), contents=[json.dumps(tasks, indent=1)])
                     atomic(folder / "responses/resolver.json", response.model_dump(mode="json", exclude_none=True))
                     if not isinstance(response.parsed, ns["LinkResolution"]):
                         raise ValueError("No parsed resolver decisions")
                     applied = ns["apply_link_decisions"](linked, response.parsed.decisions, tasks)
                     atomic(folder / "resolver_changes.json", applied)
-                    meta["resolver"].update(status="complete", changes=len(applied))
+                    meta["resolver"].update(status="complete", changes=len(applied), seconds=time.monotonic()-tick,
+                                            usage=response.usage_metadata.model_dump(mode="json") if response.usage_metadata else None)
                 atomic(folder / "extraction_reconciled.json", linked)
             except Exception as exc:
                 meta["resolver"].update(status="failed", error_type=type(exc).__name__)
@@ -220,6 +226,7 @@ async def execute(store, pid, rid):
         except Exception:
             meta["client_cleanup"] = "failed"
         meta.update(finished=now(), seconds=time.monotonic()-started)
+        meta["totals"] = {k: v for k, v in run_totals(meta).items() if k != "calls"}
         atomic(folder / "run_metadata.json", meta)
 
 

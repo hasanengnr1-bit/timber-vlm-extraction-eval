@@ -344,3 +344,28 @@ def test_openrouter_run_with_mocked_api(client, monkeypatch, tmp_path):
     ok = [c for c in meta["calls"] if c["status"] == "complete"]
     assert len(ok) == 6 and ok[0]["served_by"] == "Google" and ok[0]["usage"]["cost"] == 0.001
     assert len(seen) == 7
+    totals = meta["totals"]
+    assert totals["calls_complete"] == 6 and totals["calls_failed"] == 1
+    assert totals["input_tokens"] == 60 and totals["output_tokens"] == 30 and abs(totals["cost_usd"] - 0.006) < 1e-9
+    assert totals["wall_seconds"] is not None
+    view = client.get(f"/api/projects/{project['id']}/runs/{started.json()['id']}").json()
+    assert view["run_totals"]["calls"][0]["input_tokens"] == 10
+    runs_csv = client.get("/api/summary_runs.csv?split=all").text
+    assert runs_csv.splitlines()[0].startswith("project,project_name,split,run,kind,model,status,wall_seconds")
+
+
+def test_usage_normalisation_for_both_providers():
+    from evaluation import call_usage, run_totals
+    o = call_usage({"prompt_tokens": 100, "completion_tokens": 40, "total_tokens": 140, "cost": 0.5,
+                    "completion_tokens_details": {"reasoning_tokens": 30}})
+    assert o == {"input_tokens": 100, "output_tokens": 40, "reasoning_tokens": 30, "total_tokens": 140, "cost_usd": 0.5}
+    g = call_usage({"prompt_token_count": 100, "candidates_token_count": 10, "thoughts_token_count": 30, "total_token_count": 140})
+    assert g == {"input_tokens": 100, "output_tokens": 40, "reasoning_tokens": 30, "total_tokens": 140, "cost_usd": None}
+    meta = {"seconds": 90, "calls": [{"system": "roof_system", "status": "complete", "seconds": 80, "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3, "cost": .1}},
+                                     {"system": "wall", "status": "failed", "seconds": 5}],
+            "resolver": {"status": "complete", "seconds": 4, "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2, "cost": .01}}}
+    t = run_totals(meta)
+    assert t["wall_seconds"] == 90 and t["longest_call_seconds"] == 80 and t["total_tokens"] == 5
+    assert abs(t["cost_usd"] - .11) < 1e-9 and t["cost_complete"] and t["calls_failed"] == 1
+    assert [c["system"] for c in t["calls"]] == ["roof_system", "wall", "link_resolver"]
+    assert run_totals({})["calls"] == [] and run_totals({})["cost_usd"] is None

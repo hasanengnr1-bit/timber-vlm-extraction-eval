@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from baseline import catalog, deref, schemas
 from evaluation import DEPTHS, ERROR_TYPES, VERDICTS
 from extract import configuration, run_background
-from storage import LOCK, Store, atomic, dataset_csv, dataset_summary, now, read
+from storage import LOCK, Store, atomic, dataset_csv, dataset_runs_csv, dataset_summary, now, read
 
 HERE = Path(__file__).resolve().parent
 store = Store(os.environ.get("TIMBERPARSE_RESULTS", str(HERE / "evaluation_results")))
@@ -120,6 +120,13 @@ def summary_csv(split: str = "test", stage: str = "raw", runs: str = "all"):
         dataset_summary(store, split, stage, runs)  # validates options
         return Response(dataset_csv(store, split, stage, runs), media_type="text/csv",
                         headers={"Content-Disposition": f'attachment; filename="timberparse_{split}_{stage}_fields.csv"'})
+
+
+@app.get("/api/summary_runs.csv")
+def summary_runs_csv(split: str = "test", stage: str = "raw", runs: str = "all"):
+    with LOCK:
+        return Response(dataset_runs_csv(store, split, stage, runs), media_type="text/csv",
+                        headers={"Content-Disposition": f'attachment; filename="timberparse_{split}_runs.csv"'})
 
 
 @app.get("/api/projects/{pid}/pdf")

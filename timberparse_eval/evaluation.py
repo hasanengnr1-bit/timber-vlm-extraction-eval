@@ -154,3 +154,48 @@ def scores(inv, review):
         "member_unit": "One object in an existing schema collection; repeated joist groups stay groups.",
         "warning": "Partial or selectively reviewed results do not estimate whole-dataset accuracy. Missing-member properties are not included in matched-field accuracy."}
     return result
+
+
+def call_usage(usage):
+    """Normalise one call's usage from OpenRouter (prompt_tokens...) or the Google SDK (prompt_token_count...)."""
+    u = usage or {}
+    def num(*keys):
+        for k in keys:
+            v = u.get(k)
+            if isinstance(v, (int, float)):
+                return v
+        return 0
+    reasoning = (u.get("completion_tokens_details") or {}).get("reasoning_tokens") or u.get("thoughts_token_count") or 0
+    output = num("completion_tokens", "candidates_token_count")
+    # Google reports thinking tokens separately from candidates; OpenRouter already includes them in completion_tokens.
+    if "thoughts_token_count" in u:
+        output += u.get("thoughts_token_count") or 0
+    return {"input_tokens": num("prompt_tokens", "prompt_token_count"), "output_tokens": output,
+            "reasoning_tokens": reasoning, "total_tokens": num("total_tokens", "total_token_count"),
+            "cost_usd": u.get("cost") if isinstance(u.get("cost"), (int, float)) else None}
+
+
+def run_totals(meta):
+    """Time, tokens and cost for one extraction run, from the per-call records in run_metadata.json."""
+    calls = list(meta.get("calls") or [])
+    resolver = meta.get("resolver") or {}
+    if resolver.get("usage") is not None or resolver.get("seconds") is not None:
+        calls = calls + [dict(resolver, system="link_resolver")]
+    rows = []
+    for c in calls:
+        u = call_usage(c.get("usage"))
+        rows.append({"system": c.get("system"), "status": c.get("status"), "seconds": c.get("seconds"), **u})
+    costs = [r["cost_usd"] for r in rows if r["cost_usd"] is not None]
+    seconds = [r["seconds"] for r in rows if isinstance(r["seconds"], (int, float))]
+    return {"wall_seconds": meta.get("seconds"),
+            "longest_call_seconds": max(seconds) if seconds else None,
+            "sum_call_seconds": sum(seconds) if seconds else None,
+            "input_tokens": sum(r["input_tokens"] for r in rows),
+            "output_tokens": sum(r["output_tokens"] for r in rows),
+            "reasoning_tokens": sum(r["reasoning_tokens"] for r in rows),
+            "total_tokens": sum(r["total_tokens"] for r in rows),
+            "cost_usd": sum(costs) if costs else None,
+            "cost_complete": len(costs) == len([r for r in rows if r["status"] == "complete"]) and bool(rows),
+            "calls_complete": sum(r["status"] == "complete" for r in rows),
+            "calls_failed": sum(r["status"] == "failed" for r in rows),
+            "calls": rows}

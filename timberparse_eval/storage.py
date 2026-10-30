@@ -10,7 +10,7 @@ from pathlib import Path
 
 from baseline import APP, SYSTEMS, catalog, digest, excluded_fields, prompt, schemas
 from collections import Counter
-from evaluation import DEPTHS, effective_depth, field_type, inventory, load_depth_map, ratio, scores
+from evaluation import DEPTHS, effective_depth, field_type, inventory, load_depth_map, ratio, run_totals, scores
 SPLITS = ("unassigned", "development", "test")
 
 LOCK = threading.RLock()
@@ -148,7 +148,8 @@ class Store:
         inv = inventory(data, schema_map, read(folder / "exclusions.json"), depth_map)
         review_path = folder / "annotations" / stage / "reviews.json"
         review = read(review_path) if review_path.exists() else {"revision": 0, "fields": {}, "members": {}, "missing": [], "markings": [], "complete_groups": [], "reviewer": ""}
-        return {"metadata": read(folder / "run_metadata.json"), "inventory": inv, "review": review,
+        meta = read(folder / "run_metadata.json")
+        return {"metadata": meta, "run_totals": run_totals(meta), "inventory": inv, "review": review,
                 "scores": scores(inv, review), "collections": catalog(schema_map),
                 "stages": [s for s in ["raw", "reconciled"] if (folder / f"extraction_{s}.json").exists()],
                 "depth_levels": depth_map.get("levels", {}), "depth_map_version": depth_map.get("version")}
@@ -249,10 +250,22 @@ def dataset_summary(store, split="test", stage="raw", runs="all"):
     chosen = dataset_views(store, split, stage, runs)
     per_run = [{"project": p["id"], "project_name": p["name"], "split": p.get("split", "unassigned"), "run": m["id"],
                 "kind": m["kind"], "model": m.get("model"), "status": m["status"], "annotation_revision": v["review"]["revision"],
-                "partial_review": v["scores"]["partial"], "accuracy": v["scores"]["accuracy"]} for p, m, v in chosen]
+                "partial_review": v["scores"]["partial"], "accuracy": v["scores"]["accuracy"],
+                **{k: val for k, val in run_totals(m).items() if k != "calls"}} for p, m, v in chosen]
     pooled = pool([(p["id"] + "/" + m["id"], v) for p, m, v in chosen])
     depth_map = load_depth_map()
-    return {"split": split, "stage": stage, "runs": runs, "generated": now(), "run_count": len(chosen),
+    live = [r for r in per_run if r["kind"] == "live" and r["calls_complete"]]
+    def mean(key):
+        vals = [r[key] for r in live if isinstance(r.get(key), (int, float))]
+        return sum(vals) / len(vals) if vals else None
+    resources = {"live_runs": len(live),
+                 "total_cost_usd": sum(r["cost_usd"] for r in live if r["cost_usd"] is not None) if live else None,
+                 "total_tokens": sum(r["total_tokens"] for r in live),
+                 "mean_wall_seconds": mean("wall_seconds"), "mean_cost_usd": mean("cost_usd"),
+                 "mean_input_tokens": mean("input_tokens"), "mean_output_tokens": mean("output_tokens"),
+                 "mean_reasoning_tokens": mean("reasoning_tokens"),
+                 "note": "Live model runs only (imported or demo runs have no timing or usage)."}
+    return {"split": split, "stage": stage, "runs": runs, "generated": now(), "run_count": len(chosen), "resources": resources,
             "project_count": len({p["id"] for p, _, _ in chosen}), "depth_map_version": depth_map.get("version"),
             "per_run": per_run, "pooled": pooled,
             "warning": "Pooled over every selected run. Unreviewed fields are excluded; check partial_review before reporting."}
@@ -265,4 +278,20 @@ def dataset_csv(store, split="test", stage="raw", runs="all"):
     for project, meta, view in dataset_views(store, split, stage, runs):
         for row in field_rows(project, view, meta["id"], stage):
             writer.writerow([("'" + str(x)) if str(x).startswith(("=", "+", "-", "@", "\t", "\r")) else str(x) for x in row])
+    return out.getvalue()
+
+
+RUN_COLUMNS = ["project", "project_name", "split", "run", "kind", "model", "status", "wall_seconds", "longest_call_seconds",
+               "sum_call_seconds", "input_tokens", "output_tokens", "reasoning_tokens", "total_tokens", "cost_usd",
+               "calls_complete", "calls_failed", "field_accuracy", "annotation_revision", "partial_review"]
+
+
+def dataset_runs_csv(store, split="test", stage="raw", runs="all"):
+    data = dataset_summary(store, split, stage, runs)
+    out = io.StringIO(newline="")
+    writer = csv.writer(out)
+    writer.writerow(RUN_COLUMNS)
+    for r in data["per_run"]:
+        row = dict(r, field_accuracy=r["accuracy"]["value"])
+        writer.writerow(["" if row.get(c) is None else row.get(c) for c in RUN_COLUMNS])
     return out.getvalue()
